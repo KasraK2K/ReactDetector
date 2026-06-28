@@ -78,7 +78,10 @@ describe("context payload", () => {
         },
         nearby: {
           headings: ["Settings"],
-          landmarks: []
+          landmarks: [
+            "region: Settings",
+            "main: Mock workspace AI Dashboard Builder Metrics Plans Review Current project Revenue operations dashboard A compact mock app with buttons forms sections cards and responsive states"
+          ]
         },
         domSnippet: "<button class=\"one two\">Save settings</button>",
         react: {
@@ -96,8 +99,10 @@ describe("context payload", () => {
       name: "Save settings",
       categories: ["button"],
       nearbyHeadings: ["Settings"],
+      nearbyLandmarks: ["region: Settings"],
       componentStack: ["SaveButton"]
     });
+    expect(JSON.stringify(payload)).not.toContain("Mock workspace AI Dashboard Builder Metrics");
     expect(JSON.stringify(payload)).not.toContain("rd_1");
     expect(JSON.stringify(payload)).not.toContain("boundingBox");
     expect(JSON.stringify(payload)).not.toContain("classList");

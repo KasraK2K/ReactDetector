@@ -49,6 +49,7 @@ function compactSelectedElement(element: SelectedElementPayload): ContextPayload
   const componentStack = element.react.componentStack.filter(isComponentName).slice(0, 6);
   const source = element.react.source?.fileName ? element.react.source : undefined;
   const text = element.textSnippet && element.textSnippet !== element.accessibleName ? element.textSnippet : undefined;
+  const landmarks = element.nearby.landmarks.filter(isUsefulLandmark);
 
   return omitEmpty({
     selector: element.selector,
@@ -58,7 +59,7 @@ function compactSelectedElement(element: SelectedElementPayload): ContextPayload
     text,
     categories: element.classification.length > 0 ? element.classification : undefined,
     nearbyHeadings: element.nearby.headings.length > 0 ? element.nearby.headings : undefined,
-    nearbyLandmarks: element.nearby.landmarks.length > 0 ? element.nearby.landmarks : undefined,
+    nearbyLandmarks: landmarks.length > 0 ? landmarks : undefined,
     componentStack: componentStack.length > 0 ? componentStack : undefined,
     source
   });
@@ -78,4 +79,9 @@ function omitEmpty<T extends Record<string, unknown>>(value: T): T {
 
 function isComponentName(value: string): boolean {
   return /^[A-Z]/.test(value) && !["React", "Fragment", "StrictMode"].includes(value);
+}
+
+function isUsefulLandmark(value: string): boolean {
+  const [, label = ""] = value.split(/:\s+/, 2);
+  return value.length <= 96 && label.length > 0 && label.length <= 80 && label.split(/\s+/).length <= 12;
 }

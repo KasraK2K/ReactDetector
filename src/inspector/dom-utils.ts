@@ -231,8 +231,10 @@ export function getNearbyContext(element: Element): { headings: string[]; landma
 
     const role = getRole(current);
     if (role && ["main", "navigation", "banner", "contentinfo", "complementary", "region", "dialog", "form"].includes(role)) {
-      const label = getAccessibleName(current) ?? current.tagName.toLowerCase();
-      landmarks.add(`${role}: ${label}`);
+      const label = getLandmarkLabel(current);
+      if (label) {
+        landmarks.add(`${role}: ${label}`);
+      }
     }
 
     current = current.parentElement;
@@ -327,6 +329,38 @@ function findInputLabel(input: HTMLInputElement): string | undefined {
 
   const wrapped = input.closest("label");
   return wrapped ? getTextSnippet(wrapped, 120) : undefined;
+}
+
+function getLandmarkLabel(element: Element): string | undefined {
+  const explicitLabel = cleanText(element.getAttribute("aria-label") ?? "");
+  if (isUsefulLandmarkLabel(explicitLabel)) {
+    return explicitLabel;
+  }
+
+  const labelledBy = element.getAttribute("aria-labelledby");
+  if (labelledBy) {
+    const label = labelledBy
+      .split(/\s+/)
+      .map((id) => document.getElementById(id)?.textContent ?? "")
+      .map(cleanText)
+      .filter(Boolean)
+      .join(" ");
+    if (isUsefulLandmarkLabel(label)) {
+      return label;
+    }
+  }
+
+  const heading = element.querySelector?.("h1,h2,h3,h4,h5,h6");
+  const headingText = heading ? getTextSnippet(heading, 80) : undefined;
+  return isUsefulLandmarkLabel(headingText) ? headingText : undefined;
+}
+
+function isUsefulLandmarkLabel(value: string | undefined): value is string {
+  if (!value) {
+    return false;
+  }
+
+  return value.length <= 80 && value.split(/\s+/).length <= 12;
 }
 
 function cleanText(text: string): string {

@@ -5,7 +5,8 @@ import {
   classifyElement,
   createSelectedElementPayload,
   findSelectableElement,
-  getAccessibleName
+  getAccessibleName,
+  getNearbyContext
 } from "../../src/inspector/dom-utils.js";
 
 describe("dom utils", () => {
@@ -65,5 +66,30 @@ describe("dom utils", () => {
     expect(payload.nearby.headings).toContain("Settings");
     expect(payload.react.confidence).toBe("unavailable");
   });
-});
 
+  it("keeps nearby landmarks short and useful", () => {
+    document.body.innerHTML = `
+      <main>
+        <h1>Mock workspace AI Dashboard Builder</h1>
+        <section aria-labelledby="hero-title">
+          <h2 id="hero-title">Revenue operations dashboard</h2>
+          <article>
+            <span>Healthy data sources</span>
+            <strong>96%</strong>
+          </article>
+        </section>
+        <section>
+          ${Array.from({ length: 30 }, (_value, index) => `<p>Extra page text ${index}</p>`).join("")}
+        </section>
+      </main>
+    `;
+
+    const article = document.querySelector("article")!;
+    const context = getNearbyContext(article);
+
+    expect(context.headings).toContain("Revenue operations dashboard");
+    expect(context.landmarks).toContain("region: Revenue operations dashboard");
+    expect(context.landmarks.some((label) => label.startsWith("main:"))).toBe(false);
+    expect(context.landmarks.every((label) => label.length <= 96)).toBe(true);
+  });
+});
