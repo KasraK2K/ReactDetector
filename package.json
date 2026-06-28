@@ -2,12 +2,14 @@
   "name": "reactdetector",
   "version": "0.1.0",
   "description": "Local CLI inspector for React and Next.js apps that produces AI-ready UI context.",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "reactdetector": "./dist/node/cli/index.js"
   },
   "files": [
     "dist",
+    "LICENSE",
     "README.md",
     "package.json"
   ],

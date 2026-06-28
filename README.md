@@ -34,7 +34,7 @@ After installing or linking the package as a CLI, use the shorter `reactdetector
 
 ## Local Mock App
 
-This repo has a disposable mock Vite React app at `sandbox/mock-react-app`. The whole `sandbox/` folder is gitignored, so it is safe for local CLI testing.
+This repo has a mock Vite React app at `sandbox/mock-react-app` for local CLI testing.
 
 ```bash
 pnpm start -- run .\sandbox\mock-react-app
@@ -69,3 +69,7 @@ pnpm test:browser
 ```bash
 pnpm exec playwright install chromium
 ```
+
+## License
+
+MIT. See `LICENSE`.
