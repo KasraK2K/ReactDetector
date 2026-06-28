@@ -2,6 +2,10 @@
 
 ReactDetector is a local CLI inspector for React and Next.js apps. It starts or attaches to a dev server, opens a local browser UI, lets you click visible UI elements, and produces an AI-ready context prompt for Codex, Cursor, ChatGPT, or another assistant.
 
+## Preview
+
+![ReactDetector UI showing a selected metric card and generated context](docs/reactdetector-ui.png)
+
 ## Install
 
 ```bash
