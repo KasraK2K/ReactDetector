@@ -33,7 +33,7 @@ export function createContextPayload(options: {
 export function createMarkdownPrompt(payload: ContextPayload, userPrompt: string): string {
   const request = userPrompt.trim() || "Use the selected UI context to identify the relevant component and propose a focused fix.";
   return [
-    "I am working on a React or Next.js UI. Use this selected UI context to understand exactly which item I mean.",
+    `${formatFrameworkStatement(payload)} Use this selected UI context to understand exactly which item I mean.`,
     "",
     "Request:",
     request,
@@ -43,6 +43,16 @@ export function createMarkdownPrompt(payload: ContextPayload, userPrompt: string
     JSON.stringify(payload, null, 2),
     "```"
   ].join("\n");
+}
+
+function formatFrameworkStatement(payload: ContextPayload): string {
+  const framework = payload.project.framework.trim();
+
+  if (!framework || framework === "Unknown") {
+    return "The target project framework could not be detected from package.json.";
+  }
+
+  return `The target project framework detected from package.json is ${framework}.`;
 }
 
 function compactSelectedElement(element: SelectedElementPayload): ContextPayload["selected"] {

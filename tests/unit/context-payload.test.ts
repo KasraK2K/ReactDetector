@@ -48,6 +48,10 @@ describe("context payload", () => {
 
     expect(createMarkdownPrompt(payload, "Fix mobile spacing")).toContain("```json");
     expect(createMarkdownPrompt(payload, "Fix mobile spacing")).toContain('"mode": "specific"');
+    expect(createMarkdownPrompt(payload, "Fix mobile spacing")).toContain(
+      "The target project framework detected from package.json is Vite React."
+    );
+    expect(createMarkdownPrompt(payload, "Fix mobile spacing")).not.toContain("React or Next.js");
   });
 
   it("keeps selected element context compact", () => {

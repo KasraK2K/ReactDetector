@@ -231,7 +231,7 @@ export function getNearbyContext(element: Element): { headings: string[]; landma
 
     const role = getRole(current);
     if (role && ["main", "navigation", "banner", "contentinfo", "complementary", "region", "dialog", "form"].includes(role)) {
-      const label = getLandmarkLabel(current);
+      const label = getLandmarkLabel(current, role);
       if (label) {
         landmarks.add(`${role}: ${label}`);
       }
@@ -331,7 +331,7 @@ function findInputLabel(input: HTMLInputElement): string | undefined {
   return wrapped ? getTextSnippet(wrapped, 120) : undefined;
 }
 
-function getLandmarkLabel(element: Element): string | undefined {
+function getLandmarkLabel(element: Element, role: string): string | undefined {
   const explicitLabel = cleanText(element.getAttribute("aria-label") ?? "");
   if (isUsefulLandmarkLabel(explicitLabel)) {
     return explicitLabel;
@@ -348,6 +348,10 @@ function getLandmarkLabel(element: Element): string | undefined {
     if (isUsefulLandmarkLabel(label)) {
       return label;
     }
+  }
+
+  if (role === "main") {
+    return undefined;
   }
 
   const heading = element.querySelector?.("h1,h2,h3,h4,h5,h6");
