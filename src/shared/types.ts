@@ -65,13 +65,35 @@ export type InspectorServerState = {
 };
 
 export type ContextPayload = {
-  project: ProjectInfo;
-  targetUrl: string;
-  proxyRoute: string;
-  currentViewport: ActiveViewport;
-  issueViewportScope: IssueViewportScope;
-  selectedElement: SelectedElementPayload | null;
-  userPrompt: string;
+  project: {
+    path?: string;
+    framework: string;
+    packageManager?: PackageManager;
+  };
+  location: {
+    targetUrl: string;
+    route: string;
+  };
+  viewport: {
+    current: ActiveViewport;
+    issueScope: IssueViewportScope;
+  };
+  selected: {
+    selector: string;
+    tag: string;
+    role?: string;
+    name?: string;
+    text?: string;
+    categories?: string[];
+    nearbyHeadings?: string[];
+    nearbyLandmarks?: string[];
+    componentStack?: string[];
+    source?: {
+      fileName?: string;
+      lineNumber?: number;
+      columnNumber?: number;
+    };
+  } | null;
   generatedAt: string;
 };
 

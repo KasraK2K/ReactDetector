@@ -227,6 +227,11 @@ button {
   transition: width 160ms ease, height 160ms ease;
 }
 
+.viewport-frame[data-selector-mode="active"] {
+  border-color: #21a67a;
+  box-shadow: 0 0 0 3px rgba(33, 166, 122, 0.16), 0 16px 50px rgba(0, 0, 0, 0.3);
+}
+
 .viewport-frame iframe {
   display: block;
   width: 100%;
@@ -290,6 +295,29 @@ button {
 .selection-details b {
   color: #f4efe6;
   font-size: 14px;
+}
+
+.selector-value {
+  display: grid;
+  gap: 5px;
+  padding: 9px;
+  border: 1px solid #3d3932;
+  border-radius: 7px;
+  background: #151412;
+}
+
+.selector-value small {
+  color: #7f766b;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.selector-value code {
+  overflow-wrap: anywhere;
+  color: #7de0bc;
+  font: 12px/1.45 "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 }
 
 .selection-details span,

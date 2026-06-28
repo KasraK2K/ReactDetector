@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Logs,
   MonitorSmartphone,
+  MousePointer2,
   RefreshCw
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,6 +25,7 @@ export function App() {
   const [prompt, setPrompt] = useState("");
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [showLogs, setShowLogs] = useState(false);
+  const [selectorMode, setSelectorMode] = useState(false);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [customSize, setCustomSize] = useState({ width: 1024, height: 768 });
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -55,6 +57,7 @@ export function App() {
       }
 
       setSelectedElement(event.data.payload as SelectedElementPayload);
+      setSelectorMode(false);
     };
 
     window.addEventListener("message", onMessage);
@@ -77,13 +80,32 @@ export function App() {
   }, [activeViewport, allIssueViewports, issueViewportIds, prompt, selectedElement, state]);
 
   const markdownPrompt = useMemo(() => {
-    return contextPayload ? createMarkdownPrompt(contextPayload) : "";
-  }, [contextPayload]);
+    return contextPayload ? createMarkdownPrompt(contextPayload, prompt) : "";
+  }, [contextPayload, prompt]);
+
+  useEffect(() => {
+    sendSelectorMode(selectorMode);
+  }, [selectorMode]);
 
   const refreshPreview = () => {
     if (iframeRef.current) {
       iframeRef.current.contentWindow?.location.reload();
     }
+  };
+
+  const onPreviewLoad = () => {
+    sendSelectorMode(selectorMode);
+  };
+
+  const sendSelectorMode = (enabled: boolean) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      {
+        source: "reactdetector",
+        type: "rd:selection-mode",
+        enabled
+      },
+      "*"
+    );
   };
 
   const copyContext = async () => {
@@ -139,6 +161,15 @@ export function App() {
         </div>
 
         <div className="toolbar">
+          <button
+            className={`icon-button ${selectorMode ? "is-active" : ""}`}
+            onClick={() => setSelectorMode((value) => !value)}
+            title={selectorMode ? "Selector mode is active" : "Select item"}
+            aria-label={selectorMode ? "Disable selector mode" : "Select item"}
+            aria-pressed={selectorMode}
+          >
+            <MousePointer2 size={16} />
+          </button>
           <button className="icon-button" onClick={refreshPreview} title="Refresh preview" aria-label="Refresh preview">
             <RefreshCw size={16} />
           </button>
@@ -196,12 +227,13 @@ export function App() {
           <div className="preview-stage">
             <div
               className="viewport-frame"
+              data-selector-mode={selectorMode ? "active" : "idle"}
               style={{
                 width: `${activeViewport.width}px`,
                 height: `${activeViewport.height}px`
               }}
             >
-              <iframe ref={iframeRef} title="ReactDetector preview" src="/" />
+              <iframe ref={iframeRef} title="ReactDetector preview" src="/" onLoad={onPreviewLoad} />
             </div>
           </div>
         </section>
@@ -215,7 +247,10 @@ export function App() {
             {selectedElement ? (
               <div className="selection-details">
                 <b>{selectedElement.accessibleName ?? selectedElement.textSnippet ?? selectedElement.selector}</b>
-                <span>{selectedElement.selector}</span>
+                <div className="selector-value">
+                  <small>Selector</small>
+                  <code>{selectedElement.selector}</code>
+                </div>
                 <div className="chips">
                   {selectedElement.classification.map((item) => (
                     <em key={item}>{item}</em>
@@ -231,7 +266,9 @@ export function App() {
                 </dl>
               </div>
             ) : (
-              <p className="muted">Click an item in the preview.</p>
+              <p className="muted">
+                {selectorMode ? "Click an item in the preview to select it." : "Use the pointer button to select an item."}
+              </p>
             )}
           </section>
 
@@ -315,4 +352,3 @@ function clampDimension(value: number): number {
   }
   return Math.min(Math.max(Math.round(value), 240), 2400);
 }
-

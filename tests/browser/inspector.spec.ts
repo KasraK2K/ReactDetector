@@ -28,6 +28,7 @@ test.beforeAll(async () => {
               <main>
                 <h1>Checkout</h1>
                 <button aria-label="Pay now">Pay</button>
+                <a href="#details">Details</a>
               </main>
             </body>
           </html>
@@ -71,7 +72,24 @@ test.afterAll(async () => {
 
 test("posts selected element context from the injected inspector", async ({ page }) => {
   await page.goto(baseUrl);
-  await page.frameLocator("iframe").getByRole("button", { name: "Pay now" }).click();
+  const frame = page.frameLocator("iframe");
+  await frame.getByRole("button", { name: "Pay now" }).click();
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __lastSelection?: unknown }).__lastSelection))
+    .toBeUndefined();
+
+  await page.locator("iframe").evaluate((node) => {
+    const iframe = node as HTMLIFrameElement;
+    iframe.contentWindow?.postMessage(
+      {
+        source: "reactdetector",
+        type: "rd:selection-mode",
+        enabled: true
+      },
+      "*"
+    );
+  });
+  await frame.getByRole("button", { name: "Pay now" }).click();
 
   const payload = await page
     .waitForFunction(() => (window as unknown as { __lastSelection?: { payload: unknown } }).__lastSelection?.payload)
@@ -82,4 +100,8 @@ test("posts selected element context from the injected inspector", async ({ page
     tag: "button"
   });
   expect((payload as { classification: string[] }).classification).toContain("button");
+  await expect(frame.locator('[data-reactdetector-selected-box="true"]')).toHaveCSS("opacity", "1");
+  await expect(frame.locator('[data-reactdetector-selected-label="true"]')).toContainText("Selected:");
+  await frame.getByRole("link", { name: "Details" }).click();
+  await expect(frame.locator("body")).toHaveJSProperty("baseURI", `${baseUrl}/target#details`);
 });

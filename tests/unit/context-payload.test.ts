@@ -32,9 +32,8 @@ describe("context payload", () => {
       userPrompt: "Fix spacing"
     });
 
-    expect(payload.issueViewportScope.mode).toBe("unspecified");
-    expect(payload.selectedElement).toBeNull();
-    expect(payload.userPrompt).toBe("Fix spacing");
+    expect(payload.viewport.issueScope.mode).toBe("unspecified");
+    expect(payload.selected).toBeNull();
   });
 
   it("creates markdown with JSON context", () => {
@@ -47,8 +46,61 @@ describe("context payload", () => {
       userPrompt: "Fix mobile spacing"
     });
 
-    expect(createMarkdownPrompt(payload)).toContain("```json");
-    expect(createMarkdownPrompt(payload)).toContain('"mode": "specific"');
+    expect(createMarkdownPrompt(payload, "Fix mobile spacing")).toContain("```json");
+    expect(createMarkdownPrompt(payload, "Fix mobile spacing")).toContain('"mode": "specific"');
+  });
+
+  it("keeps selected element context compact", () => {
+    const payload = createContextPayload({
+      state,
+      activeViewport: DEFAULT_VIEWPORTS[1],
+      allIssueViewports: false,
+      issueViewportIds: ["mobile"],
+      selectedElement: {
+        rdId: "rd_1",
+        route: "/settings",
+        tag: "button",
+        role: "button",
+        accessibleName: "Save settings",
+        textSnippet: "Save settings",
+        selector: 'button[aria-label="Save settings"]',
+        classList: ["one", "two"],
+        classification: ["button"],
+        boundingBox: {
+          x: 1,
+          y: 2,
+          width: 3,
+          height: 4,
+          top: 2,
+          right: 4,
+          bottom: 6,
+          left: 1
+        },
+        nearby: {
+          headings: ["Settings"],
+          landmarks: []
+        },
+        domSnippet: "<button class=\"one two\">Save settings</button>",
+        react: {
+          componentStack: ["button", "SaveButton"],
+          confidence: "low"
+        }
+      },
+      userPrompt: "Fix spacing"
+    });
+
+    expect(payload.selected).toEqual({
+      selector: 'button[aria-label="Save settings"]',
+      tag: "button",
+      role: "button",
+      name: "Save settings",
+      categories: ["button"],
+      nearbyHeadings: ["Settings"],
+      componentStack: ["SaveButton"]
+    });
+    expect(JSON.stringify(payload)).not.toContain("rd_1");
+    expect(JSON.stringify(payload)).not.toContain("boundingBox");
+    expect(JSON.stringify(payload)).not.toContain("classList");
+    expect(JSON.stringify(payload)).not.toContain("domSnippet");
   });
 });
-
