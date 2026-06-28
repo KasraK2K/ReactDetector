@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { detectFramework, detectPackageManager, getRunCommand, type PackageJson } from "../../src/core/project.js";
+import { getPlatformSpawnCommand } from "../../src/core/targetRunner.js";
 
 describe("project detection", () => {
   it("detects Next.js projects", () => {
@@ -54,5 +55,15 @@ describe("project detection", () => {
     expect(getRunCommand("yarn", "dev")).toEqual({ command: "yarn", args: ["dev"] });
     expect(getRunCommand("bun", "dev")).toEqual({ command: "bun", args: ["run", "dev"] });
   });
-});
 
+  it("avoids shell true argument passing on Windows", () => {
+    const command = getPlatformSpawnCommand("pnpm", ["run", "dev"]);
+
+    if (process.platform === "win32") {
+      expect(command.command.toLowerCase()).toContain("cmd");
+      expect(command.args).toEqual(["/d", "/s", "/c", 'pnpm "run" "dev"']);
+    } else {
+      expect(command).toEqual({ command: "pnpm", args: ["run", "dev"] });
+    }
+  });
+});

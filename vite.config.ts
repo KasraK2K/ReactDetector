@@ -3,6 +3,7 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   root: "src/ui",
+  base: "/__rd/ui/",
   plugins: [react()],
   build: {
     outDir: "../../dist/ui",
@@ -13,4 +14,3 @@ export default defineConfig({
     port: 4546
   }
 });
-

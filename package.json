@@ -6,6 +6,11 @@
   "bin": {
     "reactdetector": "./dist/node/cli/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "build": "pnpm build:node && pnpm build:inspector && pnpm build:ui",
     "build:node": "tsc -p tsconfig.node.json",

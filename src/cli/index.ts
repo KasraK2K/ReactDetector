@@ -58,7 +58,9 @@ program
     await inspectCommand(options);
   });
 
-program.parseAsync(process.argv).catch((error: unknown) => {
+const argv = process.argv.slice(0, 2).concat(process.argv.slice(2).filter((arg, index) => !(index === 0 && arg === "--")));
+
+program.parseAsync(argv).catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error);
   console.error(`ReactDetector failed: ${message}`);
   process.exitCode = 1;
@@ -83,9 +85,14 @@ async function runCommand(projectPathInput: string, options: RunOptions): Promis
 
   const targetUrl = await waitForTargetUrl(logs, project.framework.id, 30000);
   if (!targetUrl) {
+    const recentLogs = formatRecentLogs(logs);
     await runner.stop();
     throw new Error(
-      "Could not discover the target dev-server URL from logs or default ports. Run your app manually, then use reactdetector inspect --target-url <url> --project <path>."
+      [
+        "Could not discover the target dev-server URL from logs or default ports.",
+        "Run your app manually, then use reactdetector inspect --target-url <url> --project <path>.",
+        recentLogs ? `Recent target logs:\n${recentLogs}` : "No target logs were captured."
+      ].join("\n")
     );
   }
 
@@ -249,4 +256,12 @@ function validateViewportOption(value?: string): void {
   if (parsed.length === 0) {
     throw new Error(`--viewports must include one or more of: mobile, tablet, laptop, desktop.`);
   }
+}
+
+function formatRecentLogs(logs: LogStore): string {
+  return logs
+    .all()
+    .slice(-12)
+    .map((entry) => `[${entry.source}:${entry.stream}] ${entry.message}`)
+    .join("\n");
 }

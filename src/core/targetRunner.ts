@@ -22,14 +22,14 @@ export function startTargetProject(options: {
   const commandLabel = `${command.command} ${command.args.join(" ")}`;
 
   logs.add("reactdetector", "info", `Starting ${options.framework.label} with ${commandLabel}`);
+  const spawnCommand = getPlatformSpawnCommand(command.command, command.args);
 
-  const child = spawn(command.command, command.args, {
+  const child = spawn(spawnCommand.command, spawnCommand.args, {
     cwd: options.projectPath,
     env: {
       ...process.env,
       BROWSER: "none"
     },
-    shell: process.platform === "win32",
     windowsHide: true
   });
 
@@ -56,6 +56,21 @@ export function startTargetProject(options: {
     logs,
     stop: () => stopProcess(child, logs)
   };
+}
+
+export function getPlatformSpawnCommand(command: string, args: string[]): { command: string; args: string[] } {
+  if (process.platform !== "win32") {
+    return { command, args };
+  }
+
+  return {
+    command: process.env.ComSpec ?? "cmd.exe",
+    args: ["/d", "/s", "/c", [command, ...args.map(quoteCmdArg)].join(" ")]
+  };
+}
+
+function quoteCmdArg(value: string): string {
+  return `"${value.replace(/%/g, "%%").replace(/(["^&|<>()])/g, "^$1")}"`;
 }
 
 function splitLines(chunk: Buffer): string[] {

@@ -4,17 +4,17 @@ import { LogStore } from "./logStore.js";
 const urlPattern = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[[^\]]+\]|[\w.-]+):\d+(?:\/[^\s"'<>)]*)?/gi;
 
 export function extractLocalUrls(text: string): string[] {
-  const matches = text.match(urlPattern) ?? [];
+  const matches = stripAnsi(text).match(urlPattern) ?? [];
   return matches.map(normalizeLocalUrl);
 }
 
 export function getDefaultProbeUrls(frameworkId: FrameworkId): string[] {
   if (frameworkId === "next") {
-    return ["http://localhost:3000", "http://localhost:3001"];
+    return range(3000, 3010).map((port) => `http://localhost:${port}`);
   }
 
   if (frameworkId === "vite-react") {
-    return ["http://localhost:5173", "http://localhost:5174"];
+    return range(5173, 5190).map((port) => `http://localhost:${port}`);
   }
 
   return ["http://localhost:3000", "http://localhost:5173"];
@@ -101,3 +101,13 @@ function normalizeLocalUrl(url: string): string {
   return url.replace("0.0.0.0", "localhost").replace("[::]", "localhost");
 }
 
+export function stripAnsi(text: string): string {
+  return text
+    .replace(/\u001B\][^\u0007]*(?:\u0007|\u001B\\)/g, "")
+    .replace(/\u001B\[[0-?]*[ -/]*[@-~]/g, "")
+    .replace(/\u001B[@-Z\\-_]/g, "");
+}
+
+function range(start: number, endInclusive: number): number[] {
+  return Array.from({ length: endInclusive - start + 1 }, (_value, index) => start + index);
+}
