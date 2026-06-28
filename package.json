@@ -1,0 +1,45 @@
+{
+  "name": "reactdetector",
+  "version": "0.1.0",
+  "description": "Local CLI inspector for React and Next.js apps that produces AI-ready UI context.",
+  "type": "module",
+  "bin": {
+    "reactdetector": "./dist/node/cli/index.js"
+  },
+  "scripts": {
+    "build": "pnpm build:node && pnpm build:inspector && pnpm build:ui",
+    "build:node": "tsc -p tsconfig.node.json",
+    "build:inspector": "esbuild src/inspector/inspector.ts --bundle --format=iife --target=es2020 --outfile=dist/inspector/inspector.js",
+    "build:ui": "vite build",
+    "dev:ui": "vite --host 127.0.0.1",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:browser": "pnpm build:inspector && playwright test",
+    "start": "node ./dist/node/cli/index.js"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "express": "^4.19.2",
+    "http-proxy": "^1.18.1",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/express": "^4.17.21",
+    "@types/http-proxy": "^1.17.15",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "esbuild": "^0.24.0",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20.11"
+  }
+}

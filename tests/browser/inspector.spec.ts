@@ -1,0 +1,85 @@
+import { test, expect } from "@playwright/test";
+import fs from "node:fs";
+import http from "node:http";
+import path from "node:path";
+import { injectInspectorScript } from "../../src/server/htmlRewrite.js";
+
+let server: http.Server;
+let baseUrl: string;
+
+test.beforeAll(async () => {
+  const inspectorPath = path.resolve("dist/inspector/inspector.js");
+  const inspectorScript = fs.readFileSync(inspectorPath, "utf8");
+
+  server = http.createServer((req, res) => {
+    if (req.url === "/__rd/inspector.js") {
+      res.writeHead(200, { "content-type": "application/javascript" });
+      res.end(inspectorScript);
+      return;
+    }
+
+    if (req.url === "/target") {
+      res.writeHead(200, { "content-type": "text/html" });
+      res.end(
+        injectInspectorScript(`
+          <!doctype html>
+          <html>
+            <body>
+              <main>
+                <h1>Checkout</h1>
+                <button aria-label="Pay now">Pay</button>
+              </main>
+            </body>
+          </html>
+        `)
+      );
+      return;
+    }
+
+    res.writeHead(200, { "content-type": "text/html" });
+    res.end(`
+      <!doctype html>
+      <html>
+        <body>
+          <iframe src="/target"></iframe>
+          <script>
+            window.addEventListener("message", (event) => {
+              window.__lastSelection = event.data;
+            });
+          </script>
+        </body>
+      </html>
+    `);
+  });
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      if (typeof address === "object" && address) {
+        baseUrl = `http://127.0.0.1:${address.port}`;
+      }
+      resolve();
+    });
+  });
+});
+
+test.afterAll(async () => {
+  await new Promise<void>((resolve, reject) => {
+    server.close((error) => (error ? reject(error) : resolve()));
+  });
+});
+
+test("posts selected element context from the injected inspector", async ({ page }) => {
+  await page.goto(baseUrl);
+  await page.frameLocator("iframe").getByRole("button", { name: "Pay now" }).click();
+
+  const payload = await page
+    .waitForFunction(() => (window as unknown as { __lastSelection?: { payload: unknown } }).__lastSelection?.payload)
+    .then((handle) => handle.jsonValue());
+
+  expect(payload).toMatchObject({
+    accessibleName: "Pay now",
+    tag: "button"
+  });
+  expect((payload as { classification: string[] }).classification).toContain("button");
+});
