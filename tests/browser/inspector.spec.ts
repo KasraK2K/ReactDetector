@@ -100,6 +100,7 @@ test("posts selected element context from the injected inspector", async ({ page
     tag: "button"
   });
   expect((payload as { classification: string[] }).classification).toContain("button");
+  await expect(frame.getByRole("button", { name: "Pay now" })).toHaveAttribute("data-reactdetector-selected-target", "true");
   await expect(frame.locator('[data-reactdetector-selected-box="true"]')).toHaveCSS("opacity", "1");
   await expect(frame.locator('[data-reactdetector-selected-label="true"]')).toContainText("Selected:");
   await frame.getByRole("link", { name: "Details" }).click();

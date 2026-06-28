@@ -74,10 +74,20 @@ selectedLabel.style.cssText = [
   "box-shadow:0 8px 20px rgba(0,0,0,.16)"
 ].join(";");
 
+const selectedTargetStyle = document.createElement("style");
+selectedTargetStyle.setAttribute("data-reactdetector-overlay", "true");
+selectedTargetStyle.textContent = `
+  [data-reactdetector-selected-target="true"] {
+    outline: 3px solid #f0b84f !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 0 6px rgba(240,184,79,.22), 0 10px 28px rgba(0,0,0,.18) !important;
+  }
+`;
+
 let selectedElement: Element | null = null;
 let selectionMode = false;
 
-document.documentElement.append(hoverBox, hoverLabel, selectedBox, selectedLabel);
+document.documentElement.append(hoverBox, hoverLabel, selectedBox, selectedLabel, selectedTargetStyle);
 assignRuntimeIds();
 
 const observer = new MutationObserver((mutations) => {
@@ -162,7 +172,7 @@ window.addEventListener(
 
     event.preventDefault();
     event.stopPropagation();
-    selectedElement = target;
+    setSelectedElement(target);
     showHoverOverlay(target);
     showSelectedOverlay(target);
     setSelectionMode(false);
@@ -218,8 +228,18 @@ function showSelectedOverlay(element: Element): void {
   placeLabel(selectedLabel, rect, "right");
 }
 
+function setSelectedElement(element: Element): void {
+  if (selectedElement && selectedElement !== element) {
+    selectedElement.removeAttribute("data-reactdetector-selected-target");
+  }
+
+  selectedElement = element;
+  selectedElement.setAttribute("data-reactdetector-selected-target", "true");
+}
+
 function updateSelectedOverlay(): void {
   if (!selectedElement || !selectedElement.isConnected) {
+    selectedElement?.removeAttribute("data-reactdetector-selected-target");
     selectedElement = null;
     hideSelectedOverlay();
     return;
