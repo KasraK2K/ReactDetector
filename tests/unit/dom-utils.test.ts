@@ -34,6 +34,20 @@ describe("dom utils", () => {
     expect(findSelectableElement(strong)).toBe(document.querySelector("button"));
   });
 
+  it("selects non-interactive elements directly", () => {
+    document.body.innerHTML = `
+      <section>
+        <h2>Revenue summary</h2>
+        <p>Quarterly performance text</p>
+      </section>
+    `;
+    const heading = document.querySelector("h2")!;
+    const paragraph = document.querySelector("p")!;
+
+    expect(findSelectableElement(heading)).toBe(heading);
+    expect(findSelectableElement(paragraph)).toBe(paragraph);
+  });
+
   it("builds stable selectors from test attributes", () => {
     document.body.innerHTML = `<button data-testid="save-button">Save</button>`;
     const button = document.querySelector("button")!;

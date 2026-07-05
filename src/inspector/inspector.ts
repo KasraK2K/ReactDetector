@@ -10,10 +10,13 @@ hoverBox.setAttribute("data-reactdetector-overlay", "true");
 hoverBox.setAttribute("data-reactdetector-hover-box", "true");
 hoverBox.style.cssText = [
   "position:fixed",
+  "top:0",
+  "left:0",
   "z-index:2147483647",
   "pointer-events:none",
-  "border:2px solid #21a67a",
-  "box-shadow:0 0 0 1px rgba(33,166,122,.25),0 8px 24px rgba(0,0,0,.18)",
+  "border:2px solid #4c9ffe",
+  "background:rgba(76,159,254,.10)",
+  "box-shadow:0 0 0 1px rgba(76,159,254,.30),0 8px 24px rgba(0,0,0,.18)",
   "border-radius:4px",
   "transition:transform .08s ease,width .08s ease,height .08s ease,opacity .08s ease",
   "opacity:0"
@@ -24,11 +27,13 @@ hoverLabel.setAttribute("data-reactdetector-overlay", "true");
 hoverLabel.setAttribute("data-reactdetector-hover-label", "true");
 hoverLabel.style.cssText = [
   "position:fixed",
+  "top:0",
+  "left:0",
   "z-index:2147483647",
   "pointer-events:none",
-  "background:#161616",
-  "color:#f6f1e8",
-  "border:1px solid rgba(255,255,255,.15)",
+  "background:#0d315f",
+  "color:#f4f9ff",
+  "border:1px solid rgba(255,255,255,.24)",
   "border-radius:4px",
   "padding:3px 6px",
   "font:12px/1.3 ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif",
@@ -44,6 +49,8 @@ selectedBox.setAttribute("data-reactdetector-overlay", "true");
 selectedBox.setAttribute("data-reactdetector-selected-box", "true");
 selectedBox.style.cssText = [
   "position:fixed",
+  "top:0",
+  "left:0",
   "z-index:2147483646",
   "pointer-events:none",
   "border:2px solid #f0b84f",
@@ -58,6 +65,8 @@ selectedLabel.setAttribute("data-reactdetector-overlay", "true");
 selectedLabel.setAttribute("data-reactdetector-selected-label", "true");
 selectedLabel.style.cssText = [
   "position:fixed",
+  "top:0",
+  "left:0",
   "z-index:2147483647",
   "pointer-events:none",
   "background:#f0b84f",
@@ -77,6 +86,12 @@ selectedLabel.style.cssText = [
 const selectedTargetStyle = document.createElement("style");
 selectedTargetStyle.setAttribute("data-reactdetector-overlay", "true");
 selectedTargetStyle.textContent = `
+  [data-reactdetector-hover-target="true"] {
+    outline: 2px solid #4c9ffe !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 5px rgba(76,159,254,.20) !important;
+  }
+
   [data-reactdetector-selected-target="true"] {
     outline: 3px solid #f0b84f !important;
     outline-offset: 3px !important;
@@ -85,6 +100,7 @@ selectedTargetStyle.textContent = `
 `;
 
 let selectedElement: Element | null = null;
+let hoverElement: Element | null = null;
 let selectionMode = false;
 
 document.documentElement.append(hoverBox, hoverLabel, selectedBox, selectedLabel, selectedTargetStyle);
@@ -120,24 +136,9 @@ observer.observe(document.documentElement, {
   subtree: true
 });
 
-window.addEventListener(
-  "mousemove",
-  (event) => {
-    if (!selectionMode) {
-      hideHoverOverlay();
-      return;
-    }
-
-    const target = findSelectableElement(event.target);
-    if (!target || !isInspectableElement(target)) {
-      hideHoverOverlay();
-      return;
-    }
-
-    showHoverOverlay(target);
-  },
-  true
-);
+window.addEventListener("pointermove", handlePointerMove, true);
+window.addEventListener("mousemove", handlePointerMove, true);
+window.addEventListener("mouseleave", hideHoverOverlay, true);
 
 window.addEventListener(
   "scroll",
@@ -173,7 +174,6 @@ window.addEventListener(
     event.preventDefault();
     event.stopPropagation();
     setSelectedElement(target);
-    showHoverOverlay(target);
     showSelectedOverlay(target);
     setSelectionMode(false);
 
@@ -198,6 +198,22 @@ function setSelectionMode(enabled: boolean): void {
   }
 }
 
+function handlePointerMove(event: Event): void {
+  if (!selectionMode) {
+    hideHoverOverlay();
+    return;
+  }
+
+  const target = findSelectableElement(event.target);
+  if (!target || !isInspectableElement(target)) {
+    hideHoverOverlay();
+    return;
+  }
+
+  setHoverElement(target);
+  showHoverOverlay(target);
+}
+
 function showHoverOverlay(element: Element): void {
   const rect = element.getBoundingClientRect();
   if (rect.width <= 0 || rect.height <= 0) {
@@ -207,9 +223,7 @@ function showHoverOverlay(element: Element): void {
 
   placeBox(hoverBox, rect);
 
-  const tag = element.tagName.toLowerCase();
-  const text = element.getAttribute("aria-label") || element.textContent?.replace(/\s+/g, " ").trim() || "";
-  setTextIfChanged(hoverLabel, text ? `${tag} - ${text.slice(0, 70)}` : tag);
+  setTextIfChanged(hoverLabel, `Select: ${formatElementLabel(element)}`);
   placeLabel(hoverLabel, rect, "left");
 }
 
@@ -222,10 +236,17 @@ function showSelectedOverlay(element: Element): void {
 
   placeBox(selectedBox, rect);
 
-  const tag = element.tagName.toLowerCase();
-  const name = element.getAttribute("aria-label") || element.textContent?.replace(/\s+/g, " ").trim() || tag;
-  setTextIfChanged(selectedLabel, `Selected: ${name.slice(0, 54)}`);
+  setTextIfChanged(selectedLabel, `Selected: ${formatElementLabel(element).slice(0, 64)}`);
   placeLabel(selectedLabel, rect, "right");
+}
+
+function setHoverElement(element: Element): void {
+  if (hoverElement && hoverElement !== element) {
+    hoverElement.removeAttribute("data-reactdetector-hover-target");
+  }
+
+  hoverElement = element;
+  hoverElement.setAttribute("data-reactdetector-hover-target", "true");
 }
 
 function setSelectedElement(element: Element): void {
@@ -265,6 +286,8 @@ function placeLabel(label: HTMLElement, rect: DOMRect, alignment: "left" | "righ
 }
 
 function hideHoverOverlay(): void {
+  hoverElement?.removeAttribute("data-reactdetector-hover-target");
+  hoverElement = null;
   hoverBox.style.opacity = "0";
   hoverLabel.style.opacity = "0";
 }
@@ -286,4 +309,18 @@ function isOverlayNode(node: Node): boolean {
   }
 
   return Boolean(node.parentElement?.closest("[data-reactdetector-overlay]"));
+}
+
+function formatElementLabel(element: Element): string {
+  const tag = element.tagName.toLowerCase();
+  const id = element.id ? `#${element.id}` : "";
+  const classes = Array.from(element.classList)
+    .filter((name) => !name.startsWith("rd-") && !name.startsWith("reactdetector"))
+    .slice(0, 2)
+    .map((name) => `.${name}`)
+    .join("");
+  const text = element.getAttribute("aria-label") || element.textContent?.replace(/\s+/g, " ").trim() || "";
+  const name = text ? ` - ${text.slice(0, 70)}` : "";
+
+  return `${tag}${id}${classes}${name}`;
 }

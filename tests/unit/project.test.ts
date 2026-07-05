@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { detectFramework, detectPackageManager, getRunCommand, type PackageJson } from "../../src/core/project.js";
-import { getPlatformSpawnCommand } from "../../src/core/targetRunner.js";
+import { getPlatformSpawnCommand, getTargetProcessEnv } from "../../src/core/targetRunner.js";
 
 describe("project detection", () => {
   it("detects Next.js projects", () => {
@@ -61,9 +61,20 @@ describe("project detection", () => {
 
     if (process.platform === "win32") {
       expect(command.command.toLowerCase()).toContain("cmd");
-      expect(command.args).toEqual(["/d", "/s", "/c", 'pnpm "run" "dev"']);
+      expect(command.args).toEqual(["/d", "/s", "/c", "pnpm run dev"]);
     } else {
       expect(command).toEqual({ command: "pnpm", args: ["run", "dev"] });
+    }
+  });
+
+  it("forces cmd as the package script shell on Windows", () => {
+    const env = getTargetProcessEnv();
+
+    expect(env.BROWSER).toBe("none");
+    if (process.platform === "win32") {
+      expect(env.npm_config_script_shell?.toLowerCase()).toContain("cmd");
+    } else {
+      expect(env.npm_config_script_shell).toBeUndefined();
     }
   });
 });

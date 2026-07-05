@@ -26,10 +26,7 @@ export function startTargetProject(options: {
 
   const child = spawn(spawnCommand.command, spawnCommand.args, {
     cwd: options.projectPath,
-    env: {
-      ...process.env,
-      BROWSER: "none"
-    },
+    env: getTargetProcessEnv(),
     windowsHide: true
   });
 
@@ -65,12 +62,39 @@ export function getPlatformSpawnCommand(command: string, args: string[]): { comm
 
   return {
     command: process.env.ComSpec ?? "cmd.exe",
-    args: ["/d", "/s", "/c", [command, ...args.map(quoteCmdArg)].join(" ")]
+    args: ["/d", "/s", "/c", [command, ...args].map(formatCmdArg).join(" ")]
   };
+}
+
+export function getTargetProcessEnv(): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    BROWSER: "none"
+  };
+
+  if (process.platform === "win32") {
+    setEnvValue(env, "npm_config_script_shell", process.env.ComSpec ?? "cmd.exe");
+  }
+
+  return env;
+}
+
+function setEnvValue(env: NodeJS.ProcessEnv, key: string, value: string): void {
+  for (const existingKey of Object.keys(env)) {
+    if (existingKey !== key && existingKey.toLowerCase() === key.toLowerCase()) {
+      delete env[existingKey];
+    }
+  }
+
+  env[key] = value;
 }
 
 function quoteCmdArg(value: string): string {
   return `"${value.replace(/%/g, "%%").replace(/(["^&|<>()])/g, "^$1")}"`;
+}
+
+function formatCmdArg(value: string): string {
+  return /^[a-zA-Z0-9_./:=@+\\-]+$/.test(value) ? value : quoteCmdArg(value);
 }
 
 function splitLines(chunk: Buffer): string[] {

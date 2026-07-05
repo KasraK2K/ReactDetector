@@ -55,29 +55,16 @@ export function findSelectableElement(start: EventTarget | null): Element | null
   }
 
   let current: Element | null = start;
-  let best: Element | null = null;
-  let bestScore = -1;
-
   while (current && current !== document.documentElement) {
     if (!isInspectableElement(current)) {
       current = current.parentElement;
       continue;
     }
 
-    const score = scoreElement(current);
-    if (score > bestScore) {
-      best = current;
-      bestScore = score;
-    }
-
-    if (score >= 90) {
-      break;
-    }
-
-    current = current.parentElement;
+    return normalizeSelectableElement(current);
   }
 
-  return best;
+  return null;
 }
 
 export function classifyElement(element: Element): string[] {
@@ -302,22 +289,50 @@ export function isInspectableElement(element: Element): boolean {
   return true;
 }
 
-function scoreElement(element: Element): number {
-  const classes = classifyElement(element);
-  if (classes.includes("button") || classes.includes("link") || classes.includes("input")) return 100;
-  if (classes.includes("clickable") || classes.includes("dialog")) return 90;
-  if (classes.includes("form")) return 75;
-  if (classes.includes("section") || classes.includes("landmark")) return 60;
-  if (classes.includes("card")) return 55;
-  return element.children.length > 0 ? 25 : 10;
-}
-
 function hasPointerCursor(element: Element): boolean {
   if (typeof window === "undefined" || !window.getComputedStyle) {
     return false;
   }
 
   return window.getComputedStyle(element).cursor === "pointer";
+}
+
+function normalizeSelectableElement(element: Element): Element {
+  const interactiveAncestor = closestInteractiveAncestor(element);
+  if (!interactiveAncestor || interactiveAncestor === element) {
+    return element;
+  }
+
+  return isInlineControlPart(element) ? interactiveAncestor : element;
+}
+
+function closestInteractiveAncestor(element: Element): Element | null {
+  let current: Element | null = element;
+
+  while (current && current !== document.documentElement) {
+    if (!isInspectableElement(current)) {
+      current = current.parentElement;
+      continue;
+    }
+
+    if (isInteractiveElement(current)) {
+      return current;
+    }
+
+    current = current.parentElement;
+  }
+
+  return null;
+}
+
+function isInteractiveElement(element: Element): boolean {
+  const classes = classifyElement(element);
+  return classes.some((item) => item === "button" || item === "link" || item === "input" || item === "clickable");
+}
+
+function isInlineControlPart(element: Element): boolean {
+  const tag = element.tagName.toLowerCase();
+  return ["span", "strong", "em", "small", "b", "i", "svg", "path", "use", "circle", "rect", "line", "polyline", "polygon"].includes(tag);
 }
 
 function findInputLabel(input: HTMLInputElement): string | undefined {
